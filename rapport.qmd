@@ -2,8 +2,8 @@
 title: "Rapport de laboratoire 1: méthode de Gram-Schmidt"
 subtitle: "MTH8211"
 author:
-  - name: Votre nom
-    email: votre.adresse@polymtl.ca
+  - name: Amami Yasmine
+    email: yasmine.amami@polymtl.ca
     affiliation:
       - name: Polytechnique Montréal
 format:
@@ -22,6 +22,7 @@ engine: julia
 #| output: false
 using Pkg
 Pkg.activate("rapport_env")    # activate a virtual environment
+using LinearAlgebra
 ```
 
 # Implémentation de Gram-Schmidt classique
@@ -29,6 +30,19 @@ Pkg.activate("rapport_env")    # activate a virtual environment
 <!--
 Inclure la méthode vue en classe dans gram-schmidt.jl et l'afficher ici.
 -->
+```{julia}
+function gram_schmidt(us)  
+    vs = copy(us)
+    for i = 1 : length(vs)
+        v = vs[i]
+        for j = 1 : i - 1
+           v .-= dot(us[i], vs[j]) * vs[j]  
+        end
+        v .= v / norm(v)
+    end
+    return vs
+end
+```
 
 # Illustration de l'échec en cas de dépendance linéaire
 
@@ -36,6 +50,15 @@ Inclure la méthode vue en classe dans gram-schmidt.jl et l'afficher ici.
 Proposer un exemple qui met l'implémentation classique en défaut.
 Expliquer la cause de l'échec.
 -->
+```{julia}
+vector = [0.0 1.0 1.0; 1.0 1.0 2.0; 0.0 0.0 0.0]
+println("Exemple de matrice qui presente une dependance lineaire :")
+display(vector)
+result = gram_schmidt(vector) # on va voir l'erreur ici
+```
+
+Explication : 
+la troisieme colonne est dependante des deux premieres colonnes. Une fois que la projection est realise le troisieme vecteur devient pratiquement nul. Or la division par une valeur proche de zero ou zero lors de la normalisation cause une erreur. 
 
 # Implémentation de Gram-Schmidt plus robuste
 
@@ -43,10 +66,48 @@ Expliquer la cause de l'échec.
 Proposer une manière de vérifier que les vecteurs d'entrée sont linéairement dépendants.
 Votre proposition n'a pas besoin d'être parfaite, mais vous devez discuter ses avantages et inconvénients.
 Implémenter cette méthode dans un fichier gram-schmidt-robuste.jl.
--->
+--> 
+```{julia}
+function gram_schmidt_robuste(us; tol=1e-10)
+    vs = copy(us)
+    independents = Int[]
+    for i = 1:length(vs)
+        v = vs[i]
+        for j in independents
+            v .-= dot(us[i], vs[j]) * vs[j]
+        end
+        if norm(q) > tol
+            v .= v / norm(v)
+            push!(independents, i)
+        else
+            v .= zeros(eltype(v), length(v))
+        end
+    end
+    return vs, independents
+end
+```
+
+Certains Avantages : 
+- identification explicite des vecteurs lineairement dependants 
+- pas d'erreurs liees a la division par zero
+
+Certains Inconvenients :
+- besoin de determiner le bon seuil de tolerance 
+- sensibilite et possible erreur de la methode pour les vecteurs qui sont presque dependants 
 
 # Démonstration de la nouvelle implémentation
 
 <!--
 Inclure ici votre test.jl et l'exécuter.
 -->
+```{julia}
+
+vectors = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [2.0, 3.0, 0.0]]
+orthogonal, independent = gram_schmidt_robuste(vectors)
+
+@test length(independent) == 2
+@test 1 in independent && 2 in independent
+@test !(3 in independent)
+@test norm(orthogonal[3]) == 0
+@test isapprox(dot(orthogonal[1], orthogonal[2]), 0, atol=1e-10)
+```

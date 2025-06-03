@@ -54,7 +54,8 @@ Expliquer la cause de l'échec.
 vector = [0.0 1.0 1.0; 1.0 1.0 2.0; 0.0 0.0 0.0]
 println("Exemple de matrice qui presente une dependance lineaire :")
 display(vector)
-result = gram_schmidt(vector) # on va voir l'erreur ici
+vector_cols = [vector[:, j] for j in 1:size(vector, 2)]
+result = gram_schmidt(vector_cols) # on va voir l'erreur ici
 ```
 
 Explication : 
@@ -76,7 +77,7 @@ function gram_schmidt_robuste(us; tol=1e-10)
         for j in independents
             v .-= dot(us[i], vs[j]) * vs[j]
         end
-        if norm(q) > tol
+        if norm(v) > tol
             v .= v / norm(v)
             push!(independents, i)
         else
@@ -101,6 +102,7 @@ Certains Inconvenients :
 Inclure ici votre test.jl et l'exécuter.
 -->
 ```{julia}
+using Test 
 
 vectors = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [2.0, 3.0, 0.0]]
 orthogonal, independent = gram_schmidt_robuste(vectors)
